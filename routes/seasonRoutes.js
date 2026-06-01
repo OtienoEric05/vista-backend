@@ -2,11 +2,9 @@ const express = require('express');
 const multer = require('multer');
 const path = require('path');
 const { getSeasons, createSeason, updateSeason, deleteSeason } = require('../controllers/seasonController');
-const { protect, admin } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
-// Multer Config
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, path.join(__dirname, '../uploads/'));
@@ -19,8 +17,8 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 router.get('/', getSeasons);
-router.post('/', protect, admin, upload.array('images'), createSeason);
-router.patch('/:id', protect, admin, upload.single('image'), updateSeason);
-router.delete('/:id', protect, admin, deleteSeason);
+router.post('/', upload.array('images'), createSeason);
+router.patch('/:id', upload.single('image'), updateSeason);
+router.delete('/:id', deleteSeason);
 
 module.exports = router;

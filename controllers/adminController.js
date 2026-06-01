@@ -104,10 +104,6 @@ exports.getTasks = async (req, res) => {
 exports.createTask = async (req, res) => {
   const { title, description, assignedTo, priority, deadline, bookingId } = req.body;
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'User context missing' });
-    }
-
     const task = await Task.create({
       title,
       description,
@@ -115,16 +111,13 @@ exports.createTask = async (req, res) => {
       priority,
       deadline,
       booking: bookingId || undefined,
-      createdBy: req.user._id
     });
 
     await Activity.create({
-      staffId: req.user._id,
       action: 'Created Task',
       metadata: { taskId: task._id, taskTitle: task.title, bookingId }
     });
 
-    // If linked to a booking, add to booking's activity timeline
     if (bookingId) {
       const Booking = require('../models/Booking');
       await Booking.findByIdAndUpdate(bookingId, {
@@ -132,7 +125,6 @@ exports.createTask = async (req, res) => {
           activityTimeline: {
             action: 'Task Assigned',
             details: `Task "${title}" assigned to executive`,
-            performer: req.user._id
           }
         }
       });
@@ -149,10 +141,6 @@ exports.createTask = async (req, res) => {
 // @route   PATCH /api/admin/dashboard/tasks/:id
 exports.updateTaskStatus = async (req, res) => {
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'User context missing' });
-    }
-
     const task = await Task.findByIdAndUpdate(
       req.params.id,
       { status: req.body.status },
@@ -161,7 +149,6 @@ exports.updateTaskStatus = async (req, res) => {
 
     if (task) {
       await Activity.create({
-        staffId: req.user._id,
         action: `Updated Task Status: ${req.body.status}`,
         metadata: { taskId: task._id, taskTitle: task.title }
       });
@@ -223,29 +210,27 @@ exports.getStaff = async (req, res) => {
 exports.addStaff = async (req, res) => {
   const { name, email, password, role } = req.body;
   try {
-    if (!req.user) {
-      return res.status(401).json({ message: 'User context missing' });
-    }
-
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    const bcrypt = require('bcryptjs');
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
-    const user = await User.create({
+    const userData = {
       name,
       email,
-      password: hashedPassword,
       role: role || 'AGENT',
       status: 'offline'
-    });
+    };
+
+    if (password) {
+      const bcrypt = require('bcryptjs');
+      const salt = await bcrypt.genSalt(10);
+      userData.password = await bcrypt.hash(password, salt);
+    }
+
+    const user = await User.create(userData);
 
     await Activity.create({
-      staffId: req.user._id,
       action: `Enlisted New Staff: ${name}`,
       metadata: { newStaffId: user._id, role: user.role }
     });

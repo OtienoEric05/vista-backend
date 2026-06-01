@@ -95,9 +95,6 @@ const sendBookingQuote = async (req, res) => {
 
   try {
     console.log(`🔨 Sending quote for booking: ${id}`);
-    if (!req.user) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
 
     const booking = await Booking.findById(id).populate('tour');
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -122,19 +119,15 @@ const sendBookingQuote = async (req, res) => {
     booking.quotePdfPath = pdfPath;
     booking.quoteStatus = 'SENT';
     booking.workflowStatus = 'QUOTE_SENT';
-    booking.quotedBy = req.user._id;
 
     booking.activityTimeline.push({
       action: 'Quote Sent',
       details: `Quote sent to client with expiry: ${expiresAt || 'N/A'}`,
-      performer: req.user._id
     });
 
     await booking.save();
 
-    // Log Activity
     await Activity.create({
-      staffId: req.user._id,
       action: 'Sent Booking Quote',
       metadata: { bookingId: id, guestName: booking.guestName }
     });
@@ -414,9 +407,6 @@ const assignWorkers = async (req, res) => {
 
   try {
     console.log(`🔨 Assigning workers to booking: ${id}`, workerIds);
-    if (!req.user) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
 
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -431,14 +421,11 @@ const assignWorkers = async (req, res) => {
     booking.activityTimeline.push({
       action: 'Workers Assigned',
       details: `Assigned ${workerIds.length} executive(s) to this booking`,
-      performer: req.user._id
     });
 
     await booking.save();
-    
-    // Log Activity
+
     await Activity.create({
-      staffId: req.user._id,
       action: 'Workers Assigned',
       metadata: { bookingId: id, workerCount: workerIds.length, guestName: booking.guestName }
     });
@@ -465,9 +452,6 @@ const updateWorkflowStatus = async (req, res) => {
 
   try {
     console.log(`🔨 Updating workflow for booking: ${id} to ${workflowStatus}`);
-    if (!req.user) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
 
     const booking = await Booking.findById(id);
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -490,14 +474,11 @@ const updateWorkflowStatus = async (req, res) => {
     booking.activityTimeline.push({
       action: `Status: ${workflowStatus}`,
       details: details || `Status changed from ${oldStatus} to ${workflowStatus}`,
-      performer: req.user._id
     });
 
     await booking.save();
-    
-    // Log Activity
+
     await Activity.create({
-      staffId: req.user._id,
       action: 'Status Updated',
       metadata: { bookingId: id, oldStatus, newStatus: workflowStatus, guestName: booking.guestName }
     });
@@ -528,7 +509,6 @@ const addInternalNote = async (req, res) => {
 
     booking.internalNotes.push({
       text,
-      author: req.user?._id
     });
 
     await booking.save();

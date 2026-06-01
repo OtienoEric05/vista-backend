@@ -79,7 +79,6 @@ app.get("/api/health", (req, res) => {
 });
 
 const adminRoutes = require("./routes/adminRoutes");
-const authRoutes = require("./routes/authRoutes");
 const blogRoutes = require("./routes/blogRoutes");
 const tourRoutes = require("./routes/tourRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
@@ -89,7 +88,6 @@ const seasonRoutes = require("./routes/seasonRoutes");
 const contactRoutes = require("./routes/contactRoutes");
 const messageRoutes = require("./routes/messageRoutes");
 
-app.use("/api/auth", authRoutes);
 app.use("/api/blogs", blogRoutes);
 app.use("/api/tours", tourRoutes);
 app.use("/api/bookings", bookingRoutes);
