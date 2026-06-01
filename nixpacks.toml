@@ -5,16 +5,13 @@
 NODE_ENV = "production"
 
 [phases.setup]
-nixPkgs = ["nodejs_20"]
+nixPkgs = ["...", "nodejs_20"]
 
 [phases.install]
 cmds = ["npm ci"]
 
 [phases.build]
-cmds = [
-  "npx prisma generate",
-  "mkdir -p uploads"
-]
+cmds = ["mkdir -p uploads"]
 
 [start]
 cmd = "npm run start"
