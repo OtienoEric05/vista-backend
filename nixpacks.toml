@@ -1,0 +1,20 @@
+# Nixpacks configuration for production deployment
+# Works well for Dokploy / Railway / any Nixpacks-based platform.
+
+[variables]
+NODE_ENV = "production"
+
+[phases.setup]
+nixPkgs = ["nodejs_20"]
+
+[phases.install]
+cmds = ["npm ci"]
+
+[phases.build]
+cmds = [
+  "npx prisma generate",
+  "mkdir -p uploads"
+]
+
+[start]
+cmd = "npm run start"
