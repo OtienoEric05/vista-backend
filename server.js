@@ -12,12 +12,29 @@ const User = require("./models/User");
 
 dotenv.config();
 
+const LOCAL_DEV_ORIGINS = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "http://127.0.0.1:5173",
+];
+
+const corsOrigins = [
+  ...new Set([
+    ...LOCAL_DEV_ORIGINS,
+    ...(process.env.CORS_ORIGINS || "")
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean),
+  ]),
+];
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"],
+    origin: corsOrigins,
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
   },
 });
 
@@ -53,12 +70,22 @@ app.use((req, res, next) => {
   console.log(`📡 ${req.method} ${req.url}`);
   next();
 });
-app.use(cors({
-  origin: ["http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173"],
-  credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"]
-}));
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) {
+        return callback(null, true);
+      }
+      if (corsOrigins.includes(origin)) {
+        return callback(null, origin);
+      }
+      callback(new Error(`CORS blocked: ${origin}`));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 app.use(compression());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -123,6 +150,7 @@ const startServer = async () => {
     server.listen(PORT, '0.0.0.0', () => {
       console.log(`🚀 Server running on http://localhost:${PORT}`);
       console.log(`📡 Socket.io initialized and listening`);
+      console.log(`🌐 CORS allowed origins: ${corsOrigins.join(", ")}`);
     });
   } catch (error) {
     console.error('❌ Failed to start server:', error);
