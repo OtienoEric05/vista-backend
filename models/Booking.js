@@ -1,18 +1,23 @@
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
+  referenceId: { type: String, unique: true },  // e.g. VV-2026-0001
   tour: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Tour',
-    required: false // Optional for now as we transition
+    required: false
   },
-  tourId: { type: String }, // For static tours reference
+  tourId: { type: String },
+  packageName: { type: String },                // Human-readable package name
   fromDate: { type: Date, required: false },
   toDate: { type: Date, required: false },
   guestName: { type: String, required: true },
   guestEmail: { type: String, required: true },
   guestPhone: { type: String, required: true },
   guestsCount: { type: Number, default: 1 },
+  children: { type: Number, default: 0 },
+  infant:   { type: Number, default: 0 },
+  message:  { type: String },
   totalPrice: { type: Number, required: false, default: 0 },
   quote: { type: String },
   quoteStatus: { 
