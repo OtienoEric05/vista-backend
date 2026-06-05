@@ -11,7 +11,8 @@ const tourSchema = new mongoose.Schema({
   gallery:     [{ type: String }],
   tag:         { type: String },
   tags:        [{ type: String }],
-  available:   { type: Boolean, default: true },
+  available:     { type: Boolean, default: true },
+  showOnWebsite:  { type: Boolean, default: true },  // false = hidden (search-only)
   seasonalPrices: [{
     season: { type: mongoose.Schema.Types.ObjectId, ref: 'Season' },
     price:  { type: Number, required: true }

@@ -105,25 +105,27 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "OK", message: "VistaVoyage API running" });
 });
 
-const adminRoutes = require("./routes/adminRoutes");
-const blogRoutes = require("./routes/blogRoutes");
-const tourRoutes = require("./routes/tourRoutes");
-const bookingRoutes = require("./routes/bookingRoutes");
-const appointmentRoutes = require("./routes/appointmentRoutes");
-const partnerRoutes = require("./routes/partnerRoutes");
-const seasonRoutes = require("./routes/seasonRoutes");
-const contactRoutes = require("./routes/contactRoutes");
-const messageRoutes = require("./routes/messageRoutes");
+const adminRoutes        = require("./routes/adminRoutes");
+const blogRoutes         = require("./routes/blogRoutes");
+const tourRoutes         = require("./routes/tourRoutes");
+const bookingRoutes      = require("./routes/bookingRoutes");
+const appointmentRoutes  = require("./routes/appointmentRoutes");
+const partnerRoutes      = require("./routes/partnerRoutes");
+const seasonRoutes       = require("./routes/seasonRoutes");
+const seasonalRateRoutes = require("./routes/seasonalRateRoutes");
+const contactRoutes      = require("./routes/contactRoutes");
+const messageRoutes      = require("./routes/messageRoutes");
 
-app.use("/api/blogs", blogRoutes);
-app.use("/api/tours", tourRoutes);
-app.use("/api/bookings", bookingRoutes);
-app.use("/api/appointments", appointmentRoutes);
-app.use("/api/partners", partnerRoutes);
-app.use("/api/seasons", seasonRoutes);
-app.use("/api/contact", contactRoutes);
-app.use("/api/admin", adminRoutes);
-app.use("/api/messages", messageRoutes);
+app.use("/api/blogs",          blogRoutes);
+app.use("/api/tours",          tourRoutes);
+app.use("/api/bookings",       bookingRoutes);
+app.use("/api/appointments",   appointmentRoutes);
+app.use("/api/partners",       partnerRoutes);
+app.use("/api/seasons",        seasonRoutes);
+app.use("/api/seasonal-rates", seasonalRateRoutes);
+app.use("/api/contact",        contactRoutes);
+app.use("/api/admin",          adminRoutes);
+app.use("/api/messages",       messageRoutes);
 
 console.log('✅ All routes initialized');
 

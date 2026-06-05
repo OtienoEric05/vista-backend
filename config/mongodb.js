@@ -1,35 +1,36 @@
-const mongoose = require("mongoose");
+const mongoose = require('mongoose');
 
 const connectDB = async () => {
-  const MONGODB_URI = process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/vistavoyage";
-  
+  const uri = process.env.MONGODB_URI;
+
+  if (!uri) {
+    console.error('❌ MONGODB_URI is not set in .env');
+    process.exit(1);
+  }
+
   try {
-    const conn = await mongoose.connect(MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    const conn = await mongoose.connect(uri, {
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS:         10000,
     });
-    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
-    console.log(`📂 Using Database: ${conn.connection.name}`);
-    return true;
+    console.log(`✅ MongoDB connected: ${conn.connection.host}`);
+    console.log(`📂 Database: ${conn.connection.name}`);
   } catch (error) {
-    console.error("❌ MongoDB connection failed:", error.message);
-    
-    // If Atlas fails, try local fallback
-    if (MONGODB_URI.includes("mongodb+srv")) {
-      console.log("⚠️ Attempting to connect to local MongoDB fallback...");
-      try {
-        const localConn = await mongoose.connect("mongodb://127.0.0.1:27017/vistavoyage", {
-          serverSelectionTimeoutMS: 2000,
-        });
-        console.log(`✅ Connected to local MongoDB: ${localConn.connection.host}`);
-        console.log(`📂 Using Local Database: ${localConn.connection.name}`);
-        return true;
-      } catch (localError) {
-        console.error("❌ Local MongoDB fallback also failed:", localError.message);
-        console.error("‼️ NO DATABASE CONNECTION - Data will NOT be saved!");
-        return false;
-      }
+    console.error('❌ MongoDB connection failed:', error.message);
+
+    if (error.message.includes('ENOTFOUND') || error.message.includes('getaddrinfo')) {
+      console.error('');
+      console.error('💡 DNS resolution failed — the hostname in MONGODB_URI cannot be reached.');
+      console.error('   This usually means one of:');
+      console.error('   1. You are using an INTERNAL platform URI (Railway/Render/Docker service name)');
+      console.error('      → Go to your platform dashboard and copy the PUBLIC/EXTERNAL connection string');
+      console.error('   2. You are developing locally → use mongodb://127.0.0.1:27017/vistavoyage');
+      console.error('   3. The database service is not running');
+      console.error('');
+      console.error('   Current URI host:', uri.split('@')[1]?.split('/')[0] || 'unknown');
     }
-    return false;
+
+    process.exit(1);
   }
 };
 
