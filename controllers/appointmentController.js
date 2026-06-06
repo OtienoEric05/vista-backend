@@ -69,13 +69,16 @@ const createAppointment = async (req, res) => {
       console.error('Company Email error:', e.message);
     }
 
-    /* 
-    // Notify Client via SMS
-    if (phone) {
-      const smsMessage = `Hi ${name}, we've received your ${consultationType} consultation request for ${new Date(date).toDateString()} at ${time}. VistaVoyage will contact you shortly.`;
-      await sendSMS(phone, smsMessage);
+    // Notify admin via SMS
+    const adminPhone = process.env.ADMIN_PHONE;
+    if (adminPhone) {
+      try {
+        const smsMessage = `New appointment: ${name} | ${consultationType} | ${new Date(date).toDateString()} ${time} | ${phone}`;
+        await sendSMS(adminPhone, smsMessage);
+      } catch (e) {
+        console.error('Admin SMS error:', e.message);
+      }
     }
-    */
 
     res.status(201).json(appointment);
   } catch (error) {

@@ -202,6 +202,14 @@ const createBooking = async (req, res) => {
       html:    adminNotificationHtml(emailData),
     }).catch(e => console.error('❌ Admin email failed:', e.message));
 
+    // ── 10.5. Admin SMS notification ───────────────────────────────────────────
+    const adminPhone = process.env.ADMIN_PHONE;
+    if (adminPhone) {
+      const { sendSMS } = require('../lib/sms');
+      const smsText = `[${refId}] New quote request: ${resolvedPackageName}\nFrom: ${guestName} | ${guestPhone}\nDates: ${fmt(fromDate)} → ${fmt(toDate)}\nGuests: ${toInt(guestsCount, 1)}`;
+      sendSMS(adminPhone, smsText).catch(e => console.error('❌ Admin SMS failed:', e.message));
+    }
+
     // ── 11. Return success ─────────────────────────────────────────────────────
     res.status(201).json({ ...booking.toObject(), referenceId: refId });
 
