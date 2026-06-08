@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Tour = require('../models/Tour');
 const path = require('path');
 const fs   = require('fs');
@@ -47,6 +48,8 @@ const getFeaturedTours = async (req, res) => {
 /* ─── GET by id ────────────────────────────────────────── */
 const getTourById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(404).json({ message: 'Tour not found' });
     const tour = await Tour.findById(req.params.id).lean();
     if (!tour) return res.status(404).json({ message: 'Tour not found' });
     res.json(tour);
@@ -94,6 +97,8 @@ const createTour = async (req, res) => {
 /* ─── PUT / PATCH update ───────────────────────────────── */
 const updateTour = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(404).json({ message: 'Tour not found' });
     const update = { ...req.body };
 
     if (req.files?.image?.[0])   update.image   = `/uploads/${req.files.image[0].filename}`;
@@ -116,6 +121,8 @@ const updateTour = async (req, res) => {
 /* ─── DELETE single ────────────────────────────────────── */
 const deleteTour = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id))
+      return res.status(404).json({ message: 'Tour not found' });
     const tour = await Tour.findByIdAndDelete(req.params.id);
     if (!tour) return res.status(404).json({ message: 'Tour not found' });
     const io = req.app.get('io');

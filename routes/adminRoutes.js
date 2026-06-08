@@ -19,7 +19,7 @@ const {
   sendBookingQuote
 } = require('../controllers/bookingController');
 
-router.post('/auth/login', adminLogin);
+// router.post('/auth/login', adminLogin);
 router.get('/stats', getStats);
 router.get('/tasks', getTasks);
 router.post('/tasks', createTask);
