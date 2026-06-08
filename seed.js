@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const bcrypt = require('bcryptjs');
 const dotenv = require('dotenv');
 const User = require('./models/User');
 
@@ -6,32 +7,39 @@ dotenv.config();
 
 const seed = async () => {
   try {
-    const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/vistavoyage';
+    await mongoose.connect(process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/vistavoyage');
+    console.log('Connected to MongoDB');
 
-    try {
-      await mongoose.connect(MONGODB_URI, { serverSelectionTimeoutMS: 5000 });
-      console.log('Connected to MongoDB');
-    } catch (error) {
-      console.log('Atlas connection failed, trying local...');
-      await mongoose.connect('mongodb://127.0.0.1:27017/vistavoyage', { serverSelectionTimeoutMS: 2000 });
-      console.log('Connected to local MongoDB');
-    }
+    const username = 'Vistavoyage2030';
+    const password = 'Vista@2030#!';
+    const email    = 'admin@vistavoyagetravel.group';
 
-    const email = 'admin@vistavoyage.com';
-    const existing = await User.findOne({ email });
+    const hashed = await bcrypt.hash(password, 10);
+
+    const existing = await User.findOne({ username });
 
     if (existing) {
-      await User.findOneAndUpdate({ email }, { role: 'ADMIN', name: 'Admin', status: 'online' });
-      console.log('Admin user updated:', email);
+      await User.findOneAndUpdate(
+        { username },
+        { password: hashed, role: 'ADMIN', name: 'Admin', status: 'offline', email }
+      );
+      console.log('✅ Admin updated — username:', username);
     } else {
-      await User.create({ name: 'Admin', email, role: 'ADMIN', status: 'online' });
-      console.log('Admin user created:', email);
+      await User.create({
+        name: 'Admin',
+        username,
+        email,
+        password: hashed,
+        role: 'ADMIN',
+        status: 'offline',
+      });
+      console.log('✅ Admin created — username:', username);
     }
 
     await mongoose.disconnect();
     process.exit(0);
   } catch (err) {
-    console.error('Seed failed:', err.message);
+    console.error('❌ Seed failed:', err.message);
     process.exit(1);
   }
 };

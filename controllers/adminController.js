@@ -206,6 +206,30 @@ exports.getStaff = async (req, res) => {
   }
 };
 
+// @desc    Admin login
+// @route   POST /api/admin/auth/login
+exports.adminLogin = async (req, res) => {
+  const { username, password } = req.body;
+  try {
+    const bcrypt = require('bcryptjs');
+    const admin = await User.findOne({ username, role: 'ADMIN' });
+    if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+
+    res.json({
+      _id: admin._id,
+      name: admin.name,
+      username: admin.username,
+      email: admin.email,
+      role: admin.role
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Add new staff member
 exports.addStaff = async (req, res) => {
   const { name, email, password, role } = req.body;

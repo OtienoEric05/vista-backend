@@ -8,7 +8,8 @@ const {
   getActivity, 
   getStaff,
   addStaff,
-  getCustomers
+  getCustomers,
+  adminLogin
 } = require('../controllers/adminController');
 
 const { 
@@ -18,6 +19,7 @@ const {
   sendBookingQuote
 } = require('../controllers/bookingController');
 
+router.post('/auth/login', adminLogin);
 router.get('/stats', getStats);
 router.get('/tasks', getTasks);
 router.post('/tasks', createTask);
