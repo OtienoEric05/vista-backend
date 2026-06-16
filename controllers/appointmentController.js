@@ -1,6 +1,7 @@
 const Appointment = require('../models/Appointment');
 const { sendEmail } = require('../lib/email');
 const { sendSMS } = require('../lib/sms');
+const { sendWhatsApp } = require('../lib/whatsapp');
 const { generateQuotePDF } = require('../lib/pdfGenerator');
 const path = require('path');
 
@@ -69,15 +70,21 @@ const createAppointment = async (req, res) => {
       console.error('Company Email error:', e.message);
     }
 
-    // Notify admin via SMS
+    // Notify admin via SMS + WhatsApp
     const adminPhone = process.env.ADMIN_PHONE;
+    const adminWhatsApp = process.env.ADMIN_WHATSAPP || adminPhone;
+    const notifyText = `New Appointment: ${name} | ${consultationType} | ${new Date(date).toDateString()} ${time} | ${phone}`;
+
     if (adminPhone) {
       try {
-        const smsMessage = `New appointment: ${name} | ${consultationType} | ${new Date(date).toDateString()} ${time} | ${phone}`;
-        await sendSMS(adminPhone, smsMessage);
+        await sendSMS(adminPhone, notifyText);
       } catch (e) {
         console.error('Admin SMS error:', e.message);
       }
+    }
+
+    if (adminWhatsApp) {
+      sendWhatsApp(adminWhatsApp, notifyText).catch(e => console.error('Admin WhatsApp error:', e.message));
     }
 
     res.status(201).json(appointment);

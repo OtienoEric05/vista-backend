@@ -4,8 +4,8 @@ const Tour     = require('../models/Tour');
 const Activity = require('../models/Activity');
 const Season   = require('../models/Season');
 
-const { sendEmail, clientConfirmationHtml, adminNotificationHtml } = require('../lib/emailService');
 const { generateQuotePDF } = require('../lib/pdfService');
+const { sendWhatsApp } = require('../lib/whatsapp');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -170,47 +170,14 @@ const createBooking = async (req, res) => {
       metadata: { bookingId: booking._id, guestName, refId },
     });
 
-    // ── 8. Build shared email data ─────────────────────────────────────────────
-    const emailData = {
-      refId,
-      guestName,
-      guestEmail,
-      guestPhone,
-      packageName:  resolvedPackageName,
-      fromDate,
-      toDate,
-      adults:    toInt(guestsCount, 1),
-      children:  toInt(children),
-      infant:    toInt(infant),
-      message,
-      timestamp: new Date().toLocaleString('en-GB', { timeZone: 'Africa/Nairobi' }),
-    };
-
-    // ── 9. Client confirmation email ───────────────────────────────────────────
-    sendEmail({
-      to:      guestEmail,
-      subject: `We've Received Your Booking Request – ${refId}`,
-      html:    clientConfirmationHtml(emailData),
-    }).catch(e => console.error('❌ Client email failed:', e.message));
-
-    // ── 10. Admin notification email ───────────────────────────────────────────
-    const adminEmail = process.env.ADMIN_EMAIL || process.env.COMPANY_EMAIL || 'otienoeric374@gmail.com';
-    sendEmail({
-      to:      adminEmail,
-      replyTo: guestEmail,
-      subject: `New Booking Request Received – ${resolvedPackageName} [${refId}]`,
-      html:    adminNotificationHtml(emailData),
-    }).catch(e => console.error('❌ Admin email failed:', e.message));
-
-    // ── 10.5. Admin SMS notification ───────────────────────────────────────────
-    const adminPhone = process.env.ADMIN_PHONE;
-    if (adminPhone) {
-      const { sendSMS } = require('../lib/sms');
-      const smsText = `[${refId}] New quote request: ${resolvedPackageName}\nFrom: ${guestName} | ${guestPhone}\nDates: ${fmt(fromDate)} → ${fmt(toDate)}\nGuests: ${toInt(guestsCount, 1)}`;
-      sendSMS(adminPhone, smsText).catch(e => console.error('❌ Admin SMS failed:', e.message));
+    // ── 8. Admin WhatsApp notification ─────────────────────────────────────────────
+    const adminWhatsApp = process.env.ADMIN_WHATSAPP || process.env.ADMIN_PHONE;
+    const notifyText    = `[${refId}] New ${type} booking: ${resolvedPackageName}\nGuest: ${guestName} | ${guestPhone}\nDates: ${fmt(fromDate)} → ${fmt(toDate)}\nGuests: ${toInt(guestsCount, 1)} adult(s)`;
+    if (adminWhatsApp) {
+      sendWhatsApp(adminWhatsApp, notifyText).catch(e => console.error('❌ Admin WhatsApp failed:', e.message));
     }
 
-    // ── 11. Return success ─────────────────────────────────────────────────────
+    // ── 9. Return success ─────────────────────────────────────────────────────
     res.status(201).json({ ...booking.toObject(), referenceId: refId });
 
   } catch (error) {
@@ -358,29 +325,6 @@ const sendBookingQuote = async (req, res) => {
     await booking.save();
 
     await Activity.create({ action: 'Sent Booking Quote', metadata: { bookingId: id, guestName: booking.guestName } });
-
-    // Email quote + PDF to client
-    await sendEmail({
-      to:      booking.guestEmail,
-      subject: `Your Vista Voyage Quotation – ${booking.referenceId || booking._id}`,
-      html: `
-        <div style="font-family:Arial,sans-serif;max-width:620px;margin:auto;
-                    padding:30px;border:1px solid #eee;border-radius:10px;">
-          <h2 style="color:#c9a84c;margin-top:0;">Your Official Quotation</h2>
-          <p>Dear ${booking.guestName},</p>
-          <p>Please find your quotation for <strong>${tourTitle}</strong> attached to this email.</p>
-          <div style="background:#f9f9f9;padding:20px;border-radius:8px;margin:20px 0;
-                      font-size:14px;line-height:1.7;">
-            ${quote}
-            ${expiresAt ? `<p style="margin-top:14px;color:#7a5c00;font-weight:600;">
-              ⏳ Valid until: ${new Date(expiresAt).toLocaleDateString('en-GB')}
-            </p>` : ''}
-          </div>
-          <p>Reply to this email to confirm or ask questions.</p>
-          <p style="margin-top:28px;">Kind regards,<br/><strong>Vista Voyage Team</strong></p>
-        </div>`,
-      attachments: [{ filename: `quote_${booking.referenceId || booking._id}.pdf`, path: pdfPath }],
-    });
 
     const updated = await Booking.findById(id).populate('assignedWorkers', 'name role email status').populate('tour');
     const io = req.app.get('io');

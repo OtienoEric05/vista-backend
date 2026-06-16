@@ -9,12 +9,13 @@ exports.getStats = async (req, res) => {
   try {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+    const dayEnd   = new Date(today.getTime() + 24 * 60 * 60 * 1000);
+
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const [
       totalBookings,
       pendingBookings,
-      paymentsToConfirm,
       toursStartingToday,
       flightBookings,
       packageBookings,
@@ -22,57 +23,49 @@ exports.getStats = async (req, res) => {
       bookingsToday,
       totalTours,
       totalRevenueResult,
+      todayRevenueResult,
+      monthlyRevenueResult,
+      activeClientsResult,
       staffOnline,
     ] = await Promise.all([
       Booking.countDocuments(),
-      Booking.countDocuments({
-        workflowStatus: { $in: ['NEW', 'PENDING_CONFIRMATION', 'ASSIGNED'] },
-      }),
-      Booking.countDocuments({ paymentStatus: 'PENDING' }),
-      Booking.countDocuments({
-        type: 'PACKAGE',
-        fromDate: { $gte: today, $lt: dayEnd },
-      }),
+      Booking.countDocuments({ workflowStatus: { $in: ['NEW', 'PENDING_CONFIRMATION', 'ASSIGNED'] } }),
+      Booking.countDocuments({ type: 'PACKAGE', fromDate: { $gte: today, $lt: dayEnd } }),
       Booking.countDocuments({ type: 'FLIGHT' }),
-      Booking.countDocuments({
-        $or: [{ type: 'PACKAGE' }, { type: { $exists: false } }, { type: null }],
-      }),
+      Booking.countDocuments({ $or: [{ type: 'PACKAGE' }, { type: { $exists: false } }, { type: null }] }),
       Booking.countDocuments({ type: 'APPOINTMENT' }),
       Booking.countDocuments({ createdAt: { $gte: today } }),
       Tour.countDocuments(),
+      // Total revenue — all bookings that have a price (not just CONFIRMED)
       Booking.aggregate([
-        { $match: { status: 'CONFIRMED' } },
+        { $match: { totalPrice: { $gt: 0 } } },
         { $group: { _id: null, total: { $sum: '$totalPrice' } } },
       ]),
-      User.countDocuments({
-        role: { $in: ['ADMIN', 'MANAGER', 'AGENT'] },
-        status: { $in: ['online', 'working', 'away'] },
-      }),
+      // Today's revenue
+      Booking.aggregate([
+        { $match: { createdAt: { $gte: today, $lt: dayEnd }, totalPrice: { $gt: 0 } } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } },
+      ]),
+      // This month's revenue
+      Booking.aggregate([
+        { $match: { createdAt: { $gte: monthStart }, totalPrice: { $gt: 0 } } },
+        { $group: { _id: null, total: { $sum: '$totalPrice' } } },
+      ]),
+      // Active clients — unique guest emails across all bookings
+      Booking.distinct('guestEmail'),
+      User.countDocuments({ role: { $in: ['ADMIN', 'MANAGER', 'AGENT'] }, status: { $in: ['online', 'working', 'away'] } }),
     ]);
 
-    const airportPickups = 6; // Mock or calculate from custom field if exists
-    const activeTours = totalTours;
-
-    const totalRevenue = totalRevenueResult[0]?.total || 0;
-
-    console.log('📊 Dashboard Stats Calculated:', {
-      totalBookings,
-      flightBookings,
-      packageBookings,
-      appointmentBookings,
-      bookingsToday,
-      totalTours,
-      activeTours,
-      totalRevenue,
-      staffOnline
-    });
+    const totalRevenue   = totalRevenueResult[0]?.total   || 0;
+    const todayRevenue   = todayRevenueResult[0]?.total   || 0;
+    const monthlyRevenue = monthlyRevenueResult[0]?.total || 0;
+    const activeClients  = activeClientsResult.length;
+    const activeTours    = totalTours;
 
     res.json({
       totalBookings,
       pendingBookings,
-      paymentsToConfirm,
       toursStartingToday,
-      airportPickups,
       flightBookings,
       packageBookings,
       appointmentBookings,
@@ -80,7 +73,10 @@ exports.getStats = async (req, res) => {
       totalTours,
       activeTours,
       totalRevenue,
-      staffOnline
+      todayRevenue,
+      monthlyRevenue,
+      activeClients,
+      staffOnline,
     });
   } catch (error) {
     console.error('❌ Error in getStats:', error);
@@ -209,21 +205,28 @@ exports.getStaff = async (req, res) => {
 // @desc    Admin login
 // @route   POST /api/admin/auth/login
 exports.adminLogin = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, email, password } = req.body;
   try {
     const bcrypt = require('bcryptjs');
-    const admin = await User.findOne({ username, role: 'ADMIN' });
-    if (!admin) return res.status(401).json({ message: 'Invalid credentials' });
+
+    // Accept login by username OR email
+    const query = { role: 'ADMIN' };
+    if (username) query.username = username;
+    else if (email) query.email = email;
+    else return res.status(400).json({ message: 'Username or email is required' });
+
+    const admin = await User.findOne(query);
+    if (!admin) return res.status(401).json({ message: 'Invalid username or password' });
 
     const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
+    if (!isMatch) return res.status(401).json({ message: 'Invalid username or password' });
 
     res.json({
-      _id: admin._id,
-      name: admin.name,
+      _id:      admin._id,
+      name:     admin.name,
       username: admin.username,
-      email: admin.email,
-      role: admin.role
+      email:    admin.email,
+      role:     admin.role
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
