@@ -3,7 +3,8 @@ const multer   = require('multer');
 const path     = require('path');
 const {
   getAllTours, getFeaturedTours, getTourById,
-  createTour, updateTour, deleteTour, bulkDelete, importTours
+  createTour, updateTour, deleteTour, bulkDelete, importTours,
+  seedDefaultTours
 } = require('../controllers/tourController');
 
 const router = express.Router();
@@ -23,10 +24,19 @@ const importStorage = multer.diskStorage({
 });
 const uploadImport = multer({ storage: importStorage }).single('file');
 
-router.get('/',          getAllTours);
-router.get('/featured',  getFeaturedTours);
-router.post('/import',   uploadImport, importTours);
-router.delete('/bulk',   bulkDelete);
+router.get('/',               getAllTours);
+router.get('/featured',       getFeaturedTours);
+router.post('/import',        uploadImport, importTours);
+router.post('/seed-defaults', seedDefaultTours);
+router.delete('/bulk',        bulkDelete);
+
+// Standalone image upload (returns URL, used by form image pickers)
+router.post('/upload-image', uploadImages, (req, res) => {
+  const file = req.files?.image?.[0];
+  if (!file) return res.status(400).json({ message: 'No image uploaded' });
+  res.json({ url: `/uploads/${file.filename}` });
+});
+
 router.get('/:id',       getTourById);
 
 router.post('/',         uploadImages, createTour);

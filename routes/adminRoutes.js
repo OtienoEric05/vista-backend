@@ -1,26 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const { 
-  getStats, 
-  getTasks, 
-  createTask, 
-  updateTaskStatus, 
-  getActivity, 
+const {
+  getStats,
+  getTasks,
+  createTask,
+  updateTaskStatus,
+  getActivity,
   getStaff,
   addStaff,
   getCustomers,
   adminLogin
 } = require('../controllers/adminController');
 
-const { 
+const {
   assignWorkers,
   updateWorkflowStatus,
   addInternalNote,
   sendBookingQuote
 } = require('../controllers/bookingController');
 
-// router.post('/auth/login', adminLogin);
+const { protect } = require('../lib/auth');
+
+// Public — login only
 router.post('/auth/login', adminLogin);
+
+// All routes below require a valid JWT
+router.use(protect);
+
 router.get('/stats', getStats);
 router.get('/tasks', getTasks);
 router.post('/tasks', createTask);

@@ -16,9 +16,10 @@ const bookingSchema = new mongoose.Schema({
   guestPhone: { type: String, required: true },
   guestsCount: { type: Number, default: 1 },
   children: { type: Number, default: 0 },
-  infant:   { type: Number, default: 0 },
-  message:  { type: String },
-  totalPrice: { type: Number, required: false, default: 0 },
+  travelDate:  { type: String },
+  travelStyle: { type: String },
+  message:     { type: String },
+  totalPrice:  { type: Number, required: false, default: 0 },
   quote: { type: String },
   quoteStatus: { 
     type: String, 
