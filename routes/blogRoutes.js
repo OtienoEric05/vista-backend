@@ -1,15 +1,13 @@
 const express = require('express');
-const router  = express.Router();
-const blogController              = require('../controllers/blogController');
-const { authenticate, authorize } = require('../lib/auth');
-const { publicFormLimiter }       = require('../lib/rateLimiter');
+const router = express.Router();
+const blogController = require('../controllers/blogController');
 
-// Public
-router.get('/',       blogController.getAllBlogs);
-router.post('/submit', publicFormLimiter, blogController.submitBlog);
+// Public routes
+router.get('/', blogController.getAllBlogs);
+router.post('/submit', blogController.submitBlog);
 
-// Admin only
-router.get('/admin/all',    authenticate, authorize('ADMIN', 'MANAGER'), blogController.getAdminBlogs);
-router.patch('/:id/status', authenticate, authorize('ADMIN', 'MANAGER'), blogController.updateBlogStatus);
+// Admin routes
+router.get('/admin/all', blogController.getAdminBlogs);
+router.patch('/:id/status', blogController.updateBlogStatus);
 
 module.exports = router;

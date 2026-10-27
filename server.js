@@ -101,7 +101,7 @@ app.use(
 );
 
 // ---------- ROUTES ----------
-app.get(["/health", "/api/health"], (req, res) => {
+app.get("/api/health", (req, res) => {
   res.json({ status: "OK", message: "VistaVoyage API running" });
 });
 
@@ -115,10 +115,6 @@ const seasonRoutes       = require("./routes/seasonRoutes");
 const seasonalRateRoutes = require("./routes/seasonalRateRoutes");
 const contactRoutes      = require("./routes/contactRoutes");
 const messageRoutes      = require("./routes/messageRoutes");
-const galleryRoutes      = require("./routes/galleryRoutes");
-const careerRoutes       = require("./routes/careerRoutes");
-const propertyRoutes     = require("./routes/propertyRoutes");
-const lookupRoutes       = require("./routes/lookupRoutes");
 
 app.use("/api/blogs",          blogRoutes);
 app.use("/api/tours",          tourRoutes);
@@ -130,10 +126,6 @@ app.use("/api/seasonal-rates", seasonalRateRoutes);
 app.use("/api/contact",        contactRoutes);
 app.use("/api/admin",          adminRoutes);
 app.use("/api/messages",       messageRoutes);
-app.use("/api/gallery",        galleryRoutes);
-app.use("/api/careers",        careerRoutes);
-app.use("/api/properties",     propertyRoutes);
-app.use("/api",                lookupRoutes);
 
 console.log('✅ All routes initialized');
 
@@ -169,11 +161,3 @@ const startServer = async () => {
 };
 
 startServer();
-
-// ── Prevent unhandled rejections from crashing the process ──────────────────
-process.on('unhandledRejection', (reason) => {
-  console.error('❌ Unhandled Rejection:', reason);
-});
-process.on('uncaughtException', (err) => {
-  console.error('❌ Uncaught Exception:', err.message);
-});
