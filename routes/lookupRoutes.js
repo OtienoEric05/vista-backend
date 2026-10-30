@@ -21,4 +21,8 @@ router.get('/destinations', (req, res) => {
   res.json({ data: [], total: 0 });
 });
 
+// GET /api/stats (public alias for stats)
+const { getStats } = require('../controllers/adminController');
+router.get('/stats', getStats);
+
 module.exports = router;

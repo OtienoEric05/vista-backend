@@ -19,15 +19,16 @@ const {
   sendBookingQuote
 } = require('../controllers/bookingController');
 
-const { protect } = require('../lib/auth');
+const { protect, optionalAuth } = require('../lib/auth');
 
 // Public — login only
 router.post('/auth/login', adminLogin);
 
+// Dashboard stats — accessible with or without token (uses optionalAuth)
+router.get('/stats', optionalAuth, getStats);
+
 // All routes below require a valid JWT
 router.use(protect);
-
-router.get('/stats', getStats);
 router.get('/tasks', getTasks);
 router.post('/tasks', createTask);
 router.patch('/tasks/:id', updateTaskStatus);

@@ -272,9 +272,15 @@ const createTour = async (req, res) => {
     // Image handling
     if (req.files?.image?.[0]) {
       body.image = `/uploads/${req.files.image[0].filename}`;
+    } else if (req.files?.images?.[0] && !body.image) {
+      body.image = `/uploads/${req.files.images[0].filename}`;
     }
     if (req.files?.gallery?.length) {
       body.gallery = req.files.gallery.map(f => `/uploads/${f.filename}`);
+    } else if (req.files?.images?.length && (!body.gallery || !body.gallery.length)) {
+      body.gallery = req.files.images.map(f => `/uploads/${f.filename}`);
+    } else if (req.files?.files?.length && (!body.gallery || !body.gallery.length)) {
+      body.gallery = req.files.files.map(f => `/uploads/${f.filename}`);
     }
 
     // Resolve location & destination
@@ -398,9 +404,15 @@ const updateTour = async (req, res) => {
     // Files
     if (req.files?.image?.[0]) {
       update.image = `/uploads/${req.files.image[0].filename}`;
+    } else if (req.files?.images?.[0] && !update.image) {
+      update.image = `/uploads/${req.files.images[0].filename}`;
     }
     if (req.files?.gallery?.length) {
       update.gallery = req.files.gallery.map(f => `/uploads/${f.filename}`);
+    } else if (req.files?.images?.length && (!update.gallery || !update.gallery.length)) {
+      update.gallery = req.files.images.map(f => `/uploads/${f.filename}`);
+    } else if (req.files?.files?.length && (!update.gallery || !update.gallery.length)) {
+      update.gallery = req.files.files.map(f => `/uploads/${f.filename}`);
     }
 
     // JSON fields

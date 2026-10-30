@@ -10,7 +10,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const User = require("./models/User");
 
-dotenv.config();
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 const LOCAL_DEV_ORIGINS = [
   "http://localhost:5173",
